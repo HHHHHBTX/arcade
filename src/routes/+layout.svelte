@@ -2,7 +2,6 @@
 <script>
   import favicon from '#lib/assets/favicon.svg';
   import { page } from '$app/state';
-  import { resolve } from '$app/paths';
 
   /** @type {{ children: import('svelte').Snippet }} */
   let { children } = $props();
@@ -18,7 +17,7 @@
 
 <svelte:head>
   <link rel="icon" href={favicon} />
-  <link rel="stylesheet" href={resolve('/css/shared.css')} />
+  <link rel="stylesheet" href="/css/shared.css" />
 </svelte:head>
 
 <a class="skip-link" href="#main-content">Skip to content</a>
@@ -31,9 +30,9 @@
       {#each links as link (link.path)}
         <li>
           <a
-            href={resolve(link.path)}
-            aria-current={page.url.pathname === resolve(link.path) ? 'page' : undefined}
-            class:active={page.url.pathname === resolve(link.path)}
+            href={link.path}
+            aria-current={page.url.pathname === link.path ? 'page' : undefined}
+            class:active={page.url.pathname === link.path}
           >
             {link.name}
           </a>
@@ -43,7 +42,7 @@
   </nav>
 </header>
 
-<div id="main-content">
+<div class="layout-content">
   {@render children()}
 </div>
 
@@ -85,19 +84,19 @@
     margin: 0;
   }
 
-  a {
+  nav a {
     color: white;
     text-decoration: none;
     padding: 8px 12px;
     border-radius: 6px;
   }
 
-  a:hover,
-  a.active {
+  nav a:hover,
+  nav a.active {
     background: #365c9a;
   }
 
-  a:focus-visible {
+  nav a:focus-visible {
     outline: 3px solid #ffcc66;
     outline-offset: 3px;
   }
@@ -106,6 +105,8 @@
     position: absolute;
     top: -100px;
     left: 12px;
+    padding: 10px 14px;
+    border-radius: 6px;
     background: white;
     color: black;
     z-index: 10;

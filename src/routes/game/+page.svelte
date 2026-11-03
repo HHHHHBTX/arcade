@@ -12,6 +12,7 @@
 
   const SIZE = 5;
 
+  /** @type {Record<string, number>} */
   const numbers = {
     '0-0': 1,
     '0-2': 2,
@@ -39,6 +40,11 @@
   let revealed = $state(false);
   let message = $state('');
 
+  /**
+   * @param {number} row
+   * @param {number} col
+   * @param {string} value
+   */
   function updateCell(row, col, value) {
     if (revealed) return;
 
@@ -95,9 +101,15 @@
     message = '';
   }
 
+  /**
+   * @param {KeyboardEvent} event
+   * @param {number} row
+   * @param {number} col
+   */
   function handleKeydown(event, row, col) {
     const key = event.key;
 
+    /** @type {Record<string, [number, number]>} */
     const directions = {
       ArrowUp: [-1, 0],
       ArrowDown: [1, 0],
@@ -105,10 +117,12 @@
       ArrowRight: [0, 1]
     };
 
-    if (directions[key]) {
+    const direction = directions[key];
+
+    if (direction) {
       event.preventDefault();
 
-      const [dr, dc] = directions[key];
+      const [dr, dc] = direction;
       let nextRow = row + dr;
       let nextCol = col + dc;
 

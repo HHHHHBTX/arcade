@@ -3,18 +3,15 @@
   import { onMount } from 'svelte';
   import { fly } from 'svelte/transition';
 
-  // Reusable Svelte components
   import ScoreBoard from '../../lib/components/ScoreBoard.svelte';
   import GameControls from '../../lib/components/GameControls.svelte';
   import GameTile from '../../lib/components/GameTile.svelte';
 
-  // Svelte 5 shared reactive state
   import {
     gameState,
     recordNewGame
   } from '../../lib/gameState.svelte.js';
 
-  // Game logic from the published npm package
   import {
     move as coreMove,
     spawn as coreSpawn,
@@ -24,31 +21,33 @@
 
   const SIZE = 4;
 
-  // Svelte 5 reactive state
   let board = $state(Array(16).fill(0));
   let score = $state(0);
   let bestScore = $state(0);
   let gameOver = $state(false);
   let won = $state(false);
 
-  // Svelte 5 derived state
   let highestTile = $derived(Math.max(...board));
 
-  // Convert a flat array into a 4x4 matrix.
+  /**
+   * @param {number[]} flatBoard
+   * @returns {number[][]}
+   */
   function toMatrix(flatBoard) {
     return Array.from({ length: SIZE }, (_, row) =>
       flatBoard.slice(row * SIZE, (row + 1) * SIZE)
     );
   }
 
-  // Convert a 4x4 matrix back into a flat array.
+  /**
+   * @param {number[][]} matrix
+   * @returns {number[]}
+   */
   function toFlat(matrix) {
     return matrix.flat();
   }
 
-  // Start a new 2048 game.
   function newGame() {
-    // Update shared state whenever a new game starts.
     recordNewGame();
 
     let next = Array.from(
@@ -65,11 +64,20 @@
     won = false;
   }
 
-  // Calculate points from merged tiles.
+  /**
+   * Calculate the score gained from merged tiles.
+   *
+   * @param {number[][]} before
+   * @param {number[][]} after
+   * @returns {number}
+   */
   function calculateGained(before, after) {
     let gained = 0;
 
+    /** @type {Map<number, number>} */
     const beforeCounts = new Map();
+
+    /** @type {Map<number, number>} */
     const afterCounts = new Map();
 
     for (const value of before.flat()) {
@@ -117,13 +125,16 @@
     return gained;
   }
 
-  // Move tiles using the published arcade-core library.
+  /**
+   * @param {'up' | 'down' | 'left' | 'right'} direction
+   */
   function move(direction) {
-    if (gameOver || won) return;
+    // The player can continue after reaching 2048.
+    if (gameOver) return;
 
     const currentMatrix = toMatrix(board);
 
-    // Ignore moves that do not change the board.
+    // Invalid moves do not create a new tile.
     if (!coreCanMove(currentMatrix, direction)) {
       return;
     }
@@ -140,7 +151,6 @@
 
     score += gained;
 
-    // Update the best score.
     if (score > bestScore) {
       bestScore = score;
 
@@ -154,21 +164,26 @@
       }
     }
 
-    // Add one new tile after a valid move.
     const updatedMatrix = coreSpawn(movedMatrix);
 
     board = toFlat(updatedMatrix);
 
-    // Check for a win or game over.
-    if (board.some((value) => value >= 2048)) {
+    // Winning does not end the game.
+    if (!won && board.some((value) => value >= 2048)) {
       won = true;
-    } else if (!hasMoves(updatedMatrix)) {
+    }
+
+    // Game over can occur after a win.
+    if (!hasMoves(updatedMatrix)) {
       gameOver = true;
     }
   }
 
-  // Keyboard arrow controls.
+  /**
+   * @param {KeyboardEvent} event
+   */
   function handleKeydown(event) {
+    /** @type {Record<string, 'up' | 'down' | 'left' | 'right'>} */
     const directions = {
       ArrowUp: 'up',
       ArrowDown: 'down',
@@ -198,7 +213,6 @@
     move(direction);
   }
 
-  // Load the best score when the page mounts.
   onMount(() => {
     try {
       bestScore =
@@ -234,53 +248,56 @@
       Join the numbers and reach the 2048 tile!
     </p>
 
-    <!-- Component 1: Reusable scoreboard -->
     <ScoreBoard {score} {bestScore} />
 
-    <!-- Svelte 5 derived state display -->
+    <!-- Announce score updates to screen readers. -->
+    <p
+      class="sr-only"
+      aria-live="polite"
+      aria-atomic="true"
+    >
+      Current score: {score}. Best score: {bestScore}.
+    </p>
+
     <p class="highest-tile">
       Highest Tile:
       <strong>{highestTile}</strong>
     </p>
 
-    <!-- Svelte 5 shared state display -->
     <p class="games-started">
       Games Started:
       <strong>{gameState.gamesStarted}</strong>
     </p>
 
-    <!-- 2048 game board -->
     <div
       class="board"
       role="group"
       aria-label="2048 game board"
     >
       {#each board as value, index (index)}
-        <!-- Component 3: Reusable tile -->
         <GameTile {value} {index} />
       {/each}
     </div>
 
-    <!-- Game status messages with Svelte transition -->
-    {#if won}
+    {#if gameOver}
+      <div
+        class="message"
+        role="status"
+        transition:fly={{ y: 20, duration: 350 }}
+      >
+        Game Over! Final score: {score}.
+      </div>
+    {:else if won}
       <div
         class="message success"
         role="status"
         transition:fly={{ y: 20, duration: 350 }}
       >
         You win! You reached 2048!
-      </div>
-    {:else if gameOver}
-      <div
-        class="message"
-        role="status"
-        transition:fly={{ y: 20, duration: 350 }}
-      >
-        Game Over! Try again!
+        Keep playing or start a new game.
       </div>
     {/if}
 
-    <!-- Start a new game -->
     <button
       class="new-game"
       onclick={newGame}
@@ -293,7 +310,6 @@
       Matching numbers merge into one!
     </p>
 
-    <!-- Component 2: Reusable controls -->
     <GameControls onMove={move} />
 
   </div>
@@ -332,7 +348,6 @@
     margin-bottom: 25px;
   }
 
-  /* Highest tile derived state styling */
   .highest-tile {
     margin: 12px 0 8px;
     color: #53627d;
@@ -345,7 +360,6 @@
     font-weight: 800;
   }
 
-  /* Shared state styling */
   .games-started {
     margin: 0 0 20px;
     color: #53627d;
@@ -413,6 +427,18 @@
   .success {
     background: #dcfce7;
     color: #166534;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 
   @media (max-width: 480px) {

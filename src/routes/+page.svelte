@@ -162,7 +162,7 @@
 
             <p>{game.description}</p>
 
-            <a class="play-button" href={resolve(game.href)}>
+            <a class="play-button" href={game.href}>
               {game.button}
               <span aria-hidden="true">→</span>
             </a>
